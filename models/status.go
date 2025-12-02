@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -10,7 +11,7 @@ type TodoStatus string
 
 const (
 	StatusPending    TodoStatus = "pending"
-	StatusInProgress TodoStatus = "in-progress"
+	StatusInProgress TodoStatus = "progress"
 	StatusDone       TodoStatus = "done"
 )
 
@@ -42,4 +43,15 @@ func (s *TodoStatus) Scan(value interface{}) error {
 	*s = tmp
 
 	return nil
+}
+
+func ParseTodoStatus(s string) (TodoStatus, error) {
+	s = strings.TrimSpace(strings.ToLower(s))
+
+	status := TodoStatus(s)
+	if !status.IsValid() {
+		return "", fmt.Errorf("invalid status %q, must be one of %q, %q, %q", s, StatusPending, StatusInProgress, StatusDone)
+	}
+
+	return status, nil
 }

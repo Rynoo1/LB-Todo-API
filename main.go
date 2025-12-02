@@ -5,6 +5,8 @@ import (
 
 	"github.com/Rynoo1/LB-Todo-API/config"
 	"github.com/Rynoo1/LB-Todo-API/migrate"
+	"github.com/Rynoo1/LB-Todo-API/routes"
+	"github.com/Rynoo1/LB-Todo-API/services"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -39,7 +41,17 @@ func main() {
 	}
 	println("migrations run successfully!")
 
+	authService := services.NewAuthService("dwad")
+	todoService := services.NewTodoService(db)
+	userService := services.NewUserService(db)
+	appServices := &services.AppServices{
+		TodoServices: todoService,
+		UserServices: userService,
+	}
+
 	app := fiber.New()
+
+	routes.SetupRoutes(app, appServices, db, authService)
 
 	log.Fatal(app.Listen(":8080"))
 

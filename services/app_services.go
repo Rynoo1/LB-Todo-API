@@ -1,5 +1,6 @@
 package services
 
 type AppServices struct {
-	todoServices *TodoService
+	TodoServices *TodoService
+	UserServices *UserService
 }

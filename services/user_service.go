@@ -49,3 +49,30 @@ func (s *UserService) FindByEmail(email string) (*models.User, error) {
 	}
 	return &user, nil
 }
+
+func (s *UserService) SoftDeleteUser(userId uint) error {
+	result := s.db.Delete(&models.User{}, userId)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (s *UserService) SoftDeleteUserWithTodos(userId uint) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&models.User{}, userId).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("user_id = ?", userId).Delete(&models.Todo{}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
