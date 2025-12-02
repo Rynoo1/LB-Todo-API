@@ -16,24 +16,26 @@ func SetupRoutes(app *fiber.App, svc *services.AppServices, db *gorm.DB, authSer
 
 	// Protected routes
 
-	// Creat Todo  																				V
+	// Creat Todo
 	app.Post("/todo/create", func(c *fiber.Ctx) error {
 		return handlers.CreateTodo(c, svc)
 	})
 
 	/* TODOS */
-	// Update Todo Status  																		V
+	// Update Todo Status
 	app.Post("/todo/update/status", handlers.UpdateTodoStatus(svc.TodoServices))
-	// Update Todo Description  																V
+	// Update Todo Description
 	app.Post("/todo/update/desc", handlers.UpdateTodoDesc(svc.TodoServices))
-	// Update Todo Title  																		V
+	// Update Todo Title
 	app.Post("/todo/update/title", handlers.UpdateTodoTitle(svc.TodoServices))
-	// Delete  																					TODO
+	// Delete
 	app.Post("/todo/delete", handlers.DeleteTodoItem(svc.TodoServices))
+	// Stats
+	app.Post("/todo/stats", handlers.FetchStats(svc.TodoServices))
 
 	/* USER */
-	// Soft delete account  																	TODO
+	// Soft delete account
 	app.Post("/user/delete", handlers.SoftDeleteUser(svc.UserServices))
-	// Soft delete account and todos  															TODO
+	// Soft delete account and todos
 	app.Post("/user/deleteall", handlers.SoftDeleteUserWithTodos(svc.UserServices))
 }

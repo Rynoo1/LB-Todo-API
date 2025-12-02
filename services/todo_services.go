@@ -18,6 +18,14 @@ func NewTodoService(db *gorm.DB) *TodoService {
 	return svc
 }
 
+type TodoStats struct {
+	UserId     uint  `json:"user_id"`
+	Total      int64 `json:"total"`
+	Pending    int64 `json:"pending"`
+	InProgress int64 `json:"progress"`
+	Done       int64 `json:"done"`
+}
+
 // Create Todo
 func (s *TodoService) CreateTodo(todo *models.Todo) error {
 	return s.db.Create(todo).Error
@@ -86,5 +94,36 @@ func (s *TodoService) DeleteTodo(itemId, userId uint) error {
 	return nil
 }
 
-// Delete Todo item
+func (s *TodoService) GetUserTodoStats(userId uint) (*TodoStats, error) {
+	var total int64
+	var pending int64
+	var inProgress int64
+	var done int64
+
+	if err := s.db.Model(&models.Todo{}).Where("user_id = ?", userId).Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	if err := s.db.Model(&models.Todo{}).Where("user_id = ? AND status = ?", userId, models.StatusPending).Count(&pending).Error; err != nil {
+		return nil, err
+	}
+
+	if err := s.db.Model(&models.Todo{}).Where("user_id = ? AND status = ?", userId, models.StatusInProgress).Count(&inProgress).Error; err != nil {
+		return nil, err
+	}
+
+	if err := s.db.Model(&models.Todo{}).Where("user_id = ? AND status = ?", userId, models.StatusDone).Count(&done).Error; err != nil {
+		return nil, err
+	}
+
+	return &TodoStats{
+		UserId:     userId,
+		Total:      total,
+		Pending:    pending,
+		InProgress: inProgress,
+		Done:       done,
+	}, nil
+}
+
+// Todos Analytics
 // Upload JSON/CSV file

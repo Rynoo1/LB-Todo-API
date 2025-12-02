@@ -50,6 +50,7 @@ func (s *UserService) FindByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
+// Soft delete user account
 func (s *UserService) SoftDeleteUser(userId uint) error {
 	result := s.db.Delete(&models.User{}, userId)
 
@@ -64,6 +65,7 @@ func (s *UserService) SoftDeleteUser(userId uint) error {
 	return nil
 }
 
+// Soft delete account with Todos
 func (s *UserService) SoftDeleteUserWithTodos(userId uint) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(&models.User{}, userId).Error; err != nil {

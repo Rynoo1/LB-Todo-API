@@ -195,3 +195,32 @@ func DeleteTodoItem(todoRepo *services.TodoService) fiber.Handler {
 		})
 	}
 }
+
+// Get Todo Stats for user
+func FetchStats(todoRepo *services.TodoService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var body struct {
+			UserId uint `json:"user_id"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"error": "invalid request",
+			})
+		}
+
+		if body.UserId == 0 {
+			return c.Status(400).JSON(fiber.Map{
+				"error": "user_id is required",
+			})
+		}
+
+		stats, err := todoRepo.GetUserTodoStats(body.UserId)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error": "failed to get stats",
+			})
+		}
+
+		return c.JSON(stats)
+	}
+}
