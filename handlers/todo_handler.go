@@ -167,6 +167,7 @@ func UpdateTodoTitle(todoRepo *services.TodoService) fiber.Handler {
 
 }
 
+// Delete Todo Item
 func DeleteTodoItem(todoRepo *services.TodoService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var body struct {
@@ -249,6 +250,7 @@ func parseStatus(s string) models.TodoStatus {
 	}
 }
 
+// Bulk Upload
 func BulkUploadTodos(c *fiber.Ctx) error {
 	var body struct {
 		UserId uint `json:"user_id"`
@@ -368,4 +370,50 @@ func parseCSVTodos(r io.Reader) ([]BulkTodoInput, error) {
 		})
 	}
 	return items, nil
+}
+
+// All User Todos
+func AllUserTodos(todoRepo *services.TodoService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var body struct {
+			UserId uint `json:"user_id"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"error": "invalid request",
+			})
+		}
+
+		todos, err := todoRepo.GetUserTodos(body.UserId)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error": err,
+			})
+		}
+
+		return c.JSON(todos)
+	}
+}
+
+// Return Todo
+func GetTodo(todoRepo *services.TodoService) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var body struct {
+			ItemId uint `json:"item_id"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"error": "invalid request",
+			})
+		}
+
+		todo, err := todoRepo.GetTodo(body.ItemId)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"error": err,
+			})
+		}
+
+		return c.JSON(todo)
+	}
 }

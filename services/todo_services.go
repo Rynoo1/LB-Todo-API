@@ -81,6 +81,7 @@ func (s *TodoService) UpdateTitle(itemId, userId uint, title string) error {
 	return nil
 }
 
+// Delete Todo Item
 func (s *TodoService) DeleteTodo(itemId, userId uint) error {
 	result := s.db.Where("id = ? AND user_id = ?", itemId, userId).Delete(&models.Todo{})
 	if result.Error != nil {
@@ -94,6 +95,7 @@ func (s *TodoService) DeleteTodo(itemId, userId uint) error {
 	return nil
 }
 
+// Get Todo Stats for a user
 func (s *TodoService) GetUserTodoStats(userId uint) (*TodoStats, error) {
 	var total int64
 	var pending int64
@@ -123,6 +125,26 @@ func (s *TodoService) GetUserTodoStats(userId uint) (*TodoStats, error) {
 		InProgress: inProgress,
 		Done:       done,
 	}, nil
+}
+
+// Find all user todos
+func (s *TodoService) GetUserTodos(userId uint) ([]models.Todo, error) {
+
+	var todos []models.Todo
+
+	if err := s.db.Where("user_id = ?", userId).Find(&todos).Error; err != nil {
+		return nil, err
+	}
+	return todos, nil
+}
+
+// Find specific todo
+func (s *TodoService) GetTodo(itemId uint) (models.Todo, error) {
+	var todo models.Todo
+	if err := s.db.Where("id = ?", itemId).Find(&todo).Error; err != nil {
+		return models.Todo{}, err
+	}
+	return todo, nil
 }
 
 // Todos Analytics

@@ -32,10 +32,17 @@ func SetupRoutes(app *fiber.App, svc *services.AppServices, db *gorm.DB, authSer
 	app.Post("/todo/delete", handlers.DeleteTodoItem(svc.TodoServices))
 	// Stats
 	app.Post("/todo/stats", handlers.FetchStats(svc.TodoServices))
+	// User Todos
+	app.Post("/todo/alluser", handlers.AllUserTodos(svc.TodoServices))
+	// Get Todo
+	app.Post("/todo/item", handlers.GetTodo(svc.TodoServices))
 
 	/* USER */
 	// Soft delete account
 	app.Post("/user/delete", handlers.SoftDeleteUser(svc.UserServices))
 	// Soft delete account and todos
 	app.Post("/user/deleteall", handlers.SoftDeleteUserWithTodos(svc.UserServices))
+
+	app.Post("/ai/steps", handlers.TodoSteps(svc))
+	app.Post("/ai/storypoints", handlers.StoryPoints(svc))
 }

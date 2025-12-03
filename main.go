@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/Rynoo1/LB-Todo-API/config"
 	"github.com/Rynoo1/LB-Todo-API/migrate"
@@ -41,12 +42,22 @@ func main() {
 	}
 	println("migrations run successfully!")
 
+	apiKey := os.Getenv("API_KEY")
+
+	// aiResp, err := services.AICall()
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	// fmt.Println(aiResp)
+
 	authService := services.NewAuthService("dwad")
 	todoService := services.NewTodoService(db)
 	userService := services.NewUserService(db)
+	aiService := services.NewAiService(apiKey)
 	appServices := &services.AppServices{
 		TodoServices: todoService,
 		UserServices: userService,
+		AiServices:   aiService,
 	}
 
 	app := fiber.New()
