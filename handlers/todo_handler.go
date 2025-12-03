@@ -1,14 +1,27 @@
 package handlers
 
 import (
+	"encoding/csv"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/Rynoo1/LB-Todo-API/config"
 	"github.com/Rynoo1/LB-Todo-API/models"
 	"github.com/Rynoo1/LB-Todo-API/services"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
+
+type BulkTodoInput struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+}
 
 func CreateTodo(c *fiber.Ctx, todoRepo *services.AppServices) error {
 	var body struct {
@@ -223,4 +236,136 @@ func FetchStats(todoRepo *services.TodoService) fiber.Handler {
 
 		return c.JSON(stats)
 	}
+}
+
+func parseStatus(s string) models.TodoStatus {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "progress", "in-progress", "in_progress":
+		return models.StatusInProgress
+	case "done", "completed":
+		return models.StatusDone
+	default:
+		return models.StatusPending
+	}
+}
+
+func BulkUploadTodos(c *fiber.Ctx) error {
+	var body struct {
+		UserId uint `json:"user_id"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "invalid request",
+		})
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "file is required")
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to open uploaded file")
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
+
+	var inputs []BulkTodoInput
+
+	switch ext {
+	case ".json":
+		inputs, err = parseJSONTodos(file)
+	case ".csv":
+		inputs, err = parseCSVTodos(file)
+	default:
+		return fiber.NewError(fiber.StatusBadRequest, "unsupported file type (use .json or .csv)")
+	}
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse file: %v", err))
+	}
+
+	if len(inputs) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "no todos found in file")
+	}
+
+	todos := make([]models.Todo, 0, len(inputs))
+	for _, in := range inputs {
+		if strings.TrimSpace(in.Title) == "" {
+			continue
+		}
+		todos = append(todos, models.Todo{
+			Title:       in.Title,
+			Description: in.Description,
+			Status:      parseStatus(in.Status),
+			UserId:      body.UserId,
+		})
+	}
+
+	if len(todos) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "no valid todos found in file")
+	}
+
+	db := config.DB
+	if err := db.Create(&todos).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to save todos")
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message":       "todos created successfully",
+		"created_count": len(todos),
+		"user_id":       body.UserId,
+	})
+
+}
+
+func parseJSONTodos(r io.Reader) ([]BulkTodoInput, error) {
+	var items []BulkTodoInput
+	dec := json.NewDecoder(r)
+	if err := dec.Decode(&items); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func parseCSVTodos(r io.Reader) ([]BulkTodoInput, error) {
+	reader := csv.NewReader(r)
+	reader.TrimLeadingSpace = true
+
+	rows, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, errors.New("empty csv")
+	}
+
+	dataRows := rows[1:]
+
+	var items []BulkTodoInput
+	for _, row := range dataRows {
+		if len(row) == 0 {
+			continue
+		}
+
+		title := row[0]
+		desc := ""
+		status := ""
+
+		if len(row) > 1 {
+			desc = row[1]
+		}
+		if len(row) > 2 {
+			status = row[2]
+		}
+
+		items = append(items, BulkTodoInput{
+			Title:       title,
+			Description: desc,
+			Status:      status,
+		})
+	}
+	return items, nil
 }
