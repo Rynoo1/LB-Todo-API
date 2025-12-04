@@ -13,7 +13,7 @@ type Todo struct {
 	Status      TodoStatus `json:"status" gorm:"type:VARCHAR(20)"`
 
 	Created_at time.Time      `json:"created_at"`
-	Updated_at time.Time      `json:"updated_at"`
+	Updated_at time.Time      `json:"updated_at" gorm:"autoupdateTime"`
 	DeletedAt  gorm.DeletedAt `json:"-" gorm:"index"`
 
 	UserId uint `json:"userId" gorm:"not null"` //fk

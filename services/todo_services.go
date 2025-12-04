@@ -39,7 +39,9 @@ func (s *TodoService) UpdateStatus(itemId, userId uint, status models.TodoStatus
 
 	result := s.db.Model(&models.Todo{}).
 		Where("id = ? AND user_id = ?", itemId, userId).
-		Update("status", status)
+		Updates(map[string]interface{}{
+			"status": status,
+		})
 
 	if result.Error != nil {
 		return result.Error
@@ -55,7 +57,9 @@ func (s *TodoService) UpdateStatus(itemId, userId uint, status models.TodoStatus
 // Update Todo description
 func (s *TodoService) UpdateDesc(itemId, userId uint, desc string) error {
 
-	result := s.db.Model(&models.Todo{}).Where("id = ? AND user_id = ?", itemId, userId).Update("description", desc)
+	result := s.db.Model(&models.Todo{}).Where("id = ? AND user_id = ?", itemId, userId).Updates(map[string]interface{}{
+		"description": desc,
+	})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -69,7 +73,9 @@ func (s *TodoService) UpdateDesc(itemId, userId uint, desc string) error {
 
 // Update Todo Title
 func (s *TodoService) UpdateTitle(itemId, userId uint, title string) error {
-	result := s.db.Model(&models.Todo{}).Where("id = ? AND user_id = ?", itemId, userId).Update("title", title)
+	result := s.db.Model(&models.Todo{}).Where("id = ? AND user_id = ?", itemId, userId).Updates(map[string]interface{}{
+		"title": title,
+	})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -146,6 +152,3 @@ func (s *TodoService) GetTodo(itemId uint) (models.Todo, error) {
 	}
 	return todo, nil
 }
-
-// Todos Analytics
-// Upload JSON/CSV file
